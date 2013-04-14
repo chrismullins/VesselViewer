@@ -11,6 +11,7 @@
 #include <vtkRenderer.h>
 #include <vtkActor.h>
 #include <vtkProperty.h>
+#include <vtkObjectFactory.h>
 
 // headers needed for this example
 #include <vtkParticleReader.h>
