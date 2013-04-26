@@ -84,10 +84,11 @@ int main(int argc, char* argv[])
   vtkSmartPointer<vtkTransform> shrinkTransform = 
       vtkSmartPointer<vtkTransform>::New();
   shrinkTransform->Scale(0.05, 0.05, 0.05);
-  vtkSmartPointer<vtkTransform> translateTransform = 
+  vtkSmartPointer<vtkTransform> rotateTransform = 
       vtkSmartPointer<vtkTransform>::New();
-  // A +z translation of 7.5 is needed in Slicer RAS coords.
-  translateTransform->Translate(14, 6, 0);
+  // A +z rotation of 180 is needed in Slicer RAS coords.
+    rotateTransform->RotateZ(180);
+
    // Visualize
   vtkSmartPointer<vtkPolyDataMapper> mapper =
      vtkSmartPointer<vtkPolyDataMapper>::New();
@@ -111,7 +112,7 @@ int main(int argc, char* argv[])
   vtkSmartPointer<vtkActor> labelActor = 
     vtkSmartPointer<vtkActor>::New();
   labelActor->SetMapper(labelMapper);
-  labelActor->SetUserTransform(translateTransform);
+  labelActor->SetUserTransform(rotateTransform);
   labelActor->GetProperty()->SetOpacity(0.5);
 
   vtkSmartPointer<vtkRenderer> renderer =
