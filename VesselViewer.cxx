@@ -12,10 +12,12 @@
 #include <vtkActor.h>
 #include <vtkProperty.h>
 #include <vtkObjectFactory.h>
+#include <vtkTransform.h>
 
 // headers needed for this example
 #include <vtkParticleReader.h>
 #include <vtkPolyDataMapper.h>
+#include <vtkPolyDataReader.h>
 
 // Define interaction style
 class MouseInteractorStyle4 : public vtkInteractorStyleTrackballCamera
@@ -54,14 +56,15 @@ vtkStandardNewMacro(MouseInteractorStyle4);
 int main(int argc, char* argv[])
 {
    // Verify input arguments
-   if ( argc != 2 )
+   if ( argc != 3 )
    {
       std::cout << "Usage: " << argv[0]
-      << " Filename(.tre)" << std::endl;
+      << " Filename(.tre) Filename(.vtk)" << std::endl;
       return EXIT_FAILURE;
    }
 
    std::string filePath = argv[1];
+   std::string labelPath = argv[2];
    // Tortuosity provided by Ryan is big endian encoded
    //std::string filePath = "C:\\VTK\\vtkdata-5.8.0\\Data\\Particles.raw";
    // Read the file
@@ -73,37 +76,63 @@ int main(int argc, char* argv[])
    reader->SetDataByteOrderToBigEndian();
    reader->Update();
 
+  vtkSmartPointer<vtkPolyDataReader> labelReader =
+      vtkSmartPointer<vtkPolyDataReader>::New();
+  labelReader->SetFileName ( labelPath.c_str() );
+  labelReader->Update();
+
+  vtkSmartPointer<vtkTransform> shrinkTransform = 
+      vtkSmartPointer<vtkTransform>::New();
+  shrinkTransform->Scale(0.05, 0.05, 0.05);
+  vtkSmartPointer<vtkTransform> translateTransform = 
+      vtkSmartPointer<vtkTransform>::New();
+  // A +z translation of 7.5 is needed in Slicer RAS coords.
+  translateTransform->Translate(14, 6, 0);
    // Visualize
-   vtkSmartPointer<vtkPolyDataMapper> mapper =
-      vtkSmartPointer<vtkPolyDataMapper>::New();
-   mapper->SetInputConnection(reader->GetOutputPort());
-   std::cout << "number of pieces: " << mapper->GetNumberOfPieces() << std::endl;
-   mapper->SetScalarRange(3, 9);
+  vtkSmartPointer<vtkPolyDataMapper> mapper =
+     vtkSmartPointer<vtkPolyDataMapper>::New();
+  mapper->SetInputConnection(reader->GetOutputPort());
+  std::cout << "number of pieces: " << mapper->GetNumberOfPieces() << std::endl;
+  mapper->SetScalarRange(3, 9);
 
-   vtkSmartPointer<vtkActor> actor =
-      vtkSmartPointer<vtkActor>::New();
+  vtkSmartPointer<vtkPolyDataMapper> labelMapper =
+    vtkSmartPointer<vtkPolyDataMapper>::New();
+  labelMapper->SetInputConnection(labelReader->GetOutputPort());
+  std::cout << "number of labels: " << labelMapper->GetNumberOfPieces() << std::endl;
+  labelMapper->SetScalarRange(0, 10);
 
-   actor->SetMapper(mapper);
-   actor->GetProperty()->SetPointSize(2);
+  vtkSmartPointer<vtkActor> actor =
+    vtkSmartPointer<vtkActor>::New();
 
-   vtkSmartPointer<vtkRenderer> renderer =
-      vtkSmartPointer<vtkRenderer>::New();
-   vtkSmartPointer<vtkRenderWindow> renderWindow =
-      vtkSmartPointer<vtkRenderWindow>::New();
-   renderWindow->AddRenderer(renderer);
-   vtkSmartPointer<vtkRenderWindowInteractor> renderWindowInteractor =
-      vtkSmartPointer<vtkRenderWindowInteractor>::New();
-   renderWindowInteractor->SetRenderWindow(renderWindow);
+  actor->SetMapper(mapper);
+  actor->GetProperty()->SetPointSize(2);
+  actor->SetUserTransform(shrinkTransform);
 
-   vtkSmartPointer<MouseInteractorStyle4> style =
+  vtkSmartPointer<vtkActor> labelActor = 
+    vtkSmartPointer<vtkActor>::New();
+  labelActor->SetMapper(labelMapper);
+  labelActor->SetUserTransform(translateTransform);
+  labelActor->GetProperty()->SetOpacity(0.5);
+
+  vtkSmartPointer<vtkRenderer> renderer =
+    vtkSmartPointer<vtkRenderer>::New();
+  vtkSmartPointer<vtkRenderWindow> renderWindow =
+    vtkSmartPointer<vtkRenderWindow>::New();
+  renderWindow->AddRenderer(renderer);
+  vtkSmartPointer<vtkRenderWindowInteractor> renderWindowInteractor =
+    vtkSmartPointer<vtkRenderWindowInteractor>::New();
+  renderWindowInteractor->SetRenderWindow(renderWindow);
+
+  vtkSmartPointer<MouseInteractorStyle4> style =
     vtkSmartPointer<MouseInteractorStyle4>::New();
-   renderWindowInteractor->SetInteractorStyle( style );
+  renderWindowInteractor->SetInteractorStyle( style );
 
-   renderer->AddActor(actor);
-   renderer->SetBackground(0, 0, 0);
+  renderer->AddActor(actor);
+  renderer->AddActor(labelActor);
+  renderer->SetBackground(0, 0, 0);
 
-   renderWindow->Render();
-   renderWindowInteractor->Start();
+  renderWindow->Render();
+  renderWindowInteractor->Start();
 
-   return EXIT_SUCCESS;
+  return EXIT_SUCCESS;
 }
