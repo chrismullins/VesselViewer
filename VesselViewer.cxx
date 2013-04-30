@@ -18,6 +18,7 @@
 #include <vtkParticleReader.h>
 #include <vtkPolyDataMapper.h>
 #include <vtkPolyDataReader.h>
+#include <vtkColorTransferFunction.h>
 
 // Define interaction style
 class MouseInteractorStyle4 : public vtkInteractorStyleTrackballCamera
@@ -94,7 +95,7 @@ int main(int argc, char* argv[])
      vtkSmartPointer<vtkPolyDataMapper>::New();
   mapper->SetInputConnection(reader->GetOutputPort());
   std::cout << "number of pieces: " << mapper->GetNumberOfPieces() << std::endl;
-  mapper->SetScalarRange(3, 9);
+  mapper->SetScalarRange(0,0.032786);
 
   vtkSmartPointer<vtkPolyDataMapper> labelMapper =
     vtkSmartPointer<vtkPolyDataMapper>::New();
@@ -108,6 +109,16 @@ int main(int argc, char* argv[])
   actor->SetMapper(mapper);
   actor->GetProperty()->SetPointSize(2);
   actor->SetUserTransform(shrinkTransform);
+
+  double range[2];
+  mapper->GetScalarRange(range);
+
+  vtkSmartPointer<vtkColorTransferFunction> color = 
+    vtkSmartPointer<vtkColorTransferFunction>::New();
+  color->AddRGBPoint(0.0,0.0,0.0,1.0);
+  color->AddRGBPoint(range[1] / 2, 1.0, 1.0,1.0);
+  color->AddRGBPoint(0.032786,1.0,0.0,0.0);
+  mapper->SetLookupTable(color);
 
   vtkSmartPointer<vtkActor> labelActor = 
     vtkSmartPointer<vtkActor>::New();
@@ -127,7 +138,7 @@ int main(int argc, char* argv[])
   vtkSmartPointer<MouseInteractorStyle4> style =
     vtkSmartPointer<MouseInteractorStyle4>::New();
   renderWindowInteractor->SetInteractorStyle( style );
-
+ 
   renderer->AddActor(actor);
   renderer->AddActor(labelActor);
   renderer->SetBackground(0, 0, 0);
